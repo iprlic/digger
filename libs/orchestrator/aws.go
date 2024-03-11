@@ -16,20 +16,30 @@ import (
 	"github.com/diggerhq/digger/libs/digger_config"
 )
 
-func populateretrieveBackendConfigArgs(provider stscreds.WebIdentityRoleProvider) ([]string, error) {
+
+func populateretrieveBackendConfigArgs(provider stscreds.AssumeRoleProvider) ([]string, error) {
+	log.Println("populateretrieveBackendConfigArgs")
 	creds, err := provider.Retrieve()
+
 	var args []string
+	
 	if err != nil {
+		log.Printf("Failed to get keys from provider1: %v", err)
 		return args, fmt.Errorf("populateKeys: Could not retrieve keys from provider %v", err)
 	}
+
+
 	accessKey := fmt.Sprintf("-backend-config=access_key=%v", creds.AccessKeyID)
 	secretKey := fmt.Sprintf("-backend-config=secret_key=%v", creds.SecretAccessKey)
 	token := fmt.Sprintf("-backend-config=token=%v", creds.SessionToken)
+	//roleArn := fmt.Sprintf("-backend-config=role_arn=%v", provider.RoleARN)
+	log.Printf("Session token: %v", creds.SessionToken)
+	//log.Printf("RoleArn: %v", roleArn)
 	return append(args, accessKey, secretKey, token), nil
 
 }
 
-func populateKeys(envs map[string]string, provider stscreds.WebIdentityRoleProvider) (map[string]string, error) {
+func populateKeys(envs map[string]string, provider stscreds.AssumeRoleProvider) (map[string]string, error) {
 	creds, err := provider.Retrieve()
 	if err != nil {
 		return envs, fmt.Errorf("populateKeys: Could not retrieve keys from provider %v", err)
@@ -47,7 +57,7 @@ func (job *Job) PopulateAwsCredentialsEnvVarsForJob() error {
 		var err error
 		backendConfigArgs, err := populateretrieveBackendConfigArgs(*job.StateEnvProvider)
 		if err != nil {
-			log.Printf("Failed to get keys from role: %v", err)
+			log.Printf("Failed to get keys from role 1: %v", err)
 			return fmt.Errorf("Failed to get (state) keys from role: %v", err)
 		}
 
@@ -60,7 +70,7 @@ func (job *Job) PopulateAwsCredentialsEnvVarsForJob() error {
 			job.ApplyStage.Steps[0].ExtraArgs = append(job.ApplyStage.Steps[0].ExtraArgs, backendConfigArgs...)
 		}
 		if err != nil {
-			log.Printf("Failed to get keys from role: %v", err)
+			log.Printf("Failed to get keys from role 2: %v", err)
 			return fmt.Errorf("Failed to get (state) keys from role: %v", err)
 		}
 
@@ -88,6 +98,7 @@ func (fetcher GithubAwsTokenFetcher) FetchToken(context awssdkcreds.Context) ([]
 	bearerToken := os.Getenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
 	audience := url2.QueryEscape("sts.amazonaws.com")
 	url := fmt.Sprintf("%v&audience=%v", tokenIdUrl, audience)
+	log.Printf("GithubAwsTokenFetcher: %v", url)
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", fmt.Sprintf("bearer  %v", bearerToken))
 	req.Header.Add("Accept", "application/json; api-version=2.0")
@@ -104,16 +115,22 @@ func (fetcher GithubAwsTokenFetcher) FetchToken(context awssdkcreds.Context) ([]
 	return []byte(parsed.Value), nil
 }
 
-func GetProviderFromRole(role string) *stscreds.WebIdentityRoleProvider {
+func GetProviderFromRole(role string) *stscreds.AssumeRoleProvider {
 	mySession := session.Must(session.NewSession())
-	stsSTS := sts.New(mySession, &awssdk.Config{Region: awssdk.String("us-east-1")})
-	x := stscreds.NewWebIdentityRoleProviderWithOptions(stsSTS, role, "diggerSess", GithubAwsTokenFetcher{})
+	
+	stsSTS := sts.New(mySession, &awssdk.Config{Region: awssdk.String("us-west-2")})
+        
+	x := &stscreds.AssumeRoleProvider{
+		Client:  stsSTS,
+		RoleARN: role,
+                RoleSessionName: "diggerSess",
+	}
 	return x
 }
 
-func GetStateAndCommandProviders(project digger_config.Project) (*stscreds.WebIdentityRoleProvider, *stscreds.WebIdentityRoleProvider) {
-	var StateEnvProvider *stscreds.WebIdentityRoleProvider
-	var CommandEnvProvider *stscreds.WebIdentityRoleProvider
+func GetStateAndCommandProviders(project digger_config.Project) (*stscreds.AssumeRoleProvider, *stscreds.AssumeRoleProvider) {
+	var StateEnvProvider *stscreds.AssumeRoleProvider
+	var CommandEnvProvider *stscreds.AssumeRoleProvider
 	if project.AwsRoleToAssume != nil {
 
 		if project.AwsRoleToAssume.State != "" {

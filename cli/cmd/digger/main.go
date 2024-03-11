@@ -521,6 +521,7 @@ func azureCI(lock core_locking.Lock, policyChecker core_policy.Checker, backendA
 	repo := strings.ReplaceAll(parsedAzureContext.BaseUrl, "/", "-")
 
 	for _, p := range diggerConfig.Projects {
+		log.Printf(p.Name)
 		err = backendApi.ReportProject(repo, p.Name, yamlStr)
 		if err != nil {
 			log.Printf("Failed to report project %s. %s\n", p.Name, err)

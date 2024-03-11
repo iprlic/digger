@@ -341,8 +341,8 @@ func ConvertGitLabEventToCommands(event GitLabEvent, gitLabContext *GitLabContex
 				return nil, true, fmt.Errorf("failed to find workflow digger_config '%s' for project '%s'", project.Workflow, project.Name)
 			}
 			stateEnvVars, commandEnvVars := digger_config.CollectTerraformEnvConfig(workflow.EnvVars)
-			var StateEnvProvider *stscreds.WebIdentityRoleProvider
-			var CommandEnvProvider *stscreds.WebIdentityRoleProvider
+			var StateEnvProvider *stscreds.AssumeRoleProvider
+			var CommandEnvProvider *stscreds.AssumeRoleProvider
 			if project.AwsRoleToAssume != nil {
 
 				if project.AwsRoleToAssume.Command != "" {

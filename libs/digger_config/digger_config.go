@@ -484,7 +484,13 @@ func (c *DiggerConfig) GetProjects(projectName string) []Project {
 
 func (c *DiggerConfig) GetModifiedProjects(changedFiles []string) []Project {
 	var result []Project
+	fmt.Println("Projects count:", len(c.Projects))
 	for _, project := range c.Projects {
+		fmt.Println("Project name:", project.Name)
+		fmt.Println("Project dir:", project.Dir)
+		fmt.Println("Project terragrunt:", project.Terragrunt)
+		fmt.Println("Project", project)
+		
 		for _, changedFile := range changedFiles {
 			includePatterns := project.IncludePatterns
 			excludePatterns := project.ExcludePatterns

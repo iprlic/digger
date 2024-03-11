@@ -86,15 +86,21 @@ func (e *EnvProvider) Retrieve() (credentials.Value, error) {
 	e.retrieved = false
 	//assign id from env vars
 	idEnvVars := []string{"DIGGER_AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY"}
+	log.Printf("Error1")
 	id, err := assignEnv(idEnvVars)
 	if err != nil {
+		log.Printf("error in assignEnv %v", err)
+		log.Printf("Error2")
 		return credentials.Value{ProviderName: EnvProviderName}, ErrAccessKeyIDNotFound
 	}
 
 	//assign secret from env vars
 	secretEnvVars := []string{"DIGGER_AWS_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY", "AWS_SECRET_KEY"}
 	secret, err := assignEnv(secretEnvVars)
+	log.Printf("Error3")
 	if err != nil {
+		log.Printf("Error4")
+		log.Printf("error in assignEnv2 %v", err)
 		return credentials.Value{ProviderName: EnvProviderName}, ErrSecretAccessKeyNotFound
 	}
 

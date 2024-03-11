@@ -26,8 +26,8 @@ type Job struct {
 	RunEnvVars         map[string]string
 	StateEnvVars       map[string]string
 	CommandEnvVars     map[string]string
-	StateEnvProvider   *stscreds.WebIdentityRoleProvider
-	CommandEnvProvider *stscreds.WebIdentityRoleProvider
+	StateEnvProvider   *stscreds.AssumeRoleProvider
+	CommandEnvProvider *stscreds.AssumeRoleProvider
 }
 
 type Step struct {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"log"
 
 	"github.com/diggerhq/digger/cli/pkg/utils"
 	digger_config2 "github.com/diggerhq/digger/libs/digger_config"
@@ -397,12 +398,19 @@ func ProcessAzureReposEvent(azureEvent interface{}, diggerConfig *digger_config2
 			return nil, nil, 0, fmt.Errorf("could not get changed files: %v", err)
 		}
 
+		fmt.Println("Changed files count", len(changedFiles))
+
 		impactedProjects = diggerConfig.GetModifiedProjects(changedFiles)
 		requestedProject := utils.ParseProjectName(azureEvent.(AzureCommentEvent).Resource.Comment.Content)
 
+		fmt.Println("Impacted projects count", len(impactedProjects))
+		
 		if requestedProject == "" {
 			return impactedProjects, nil, prNumber, nil
 		}
+
+		
+	
 
 		for _, project := range impactedProjects {
 			if project.Name == requestedProject {
@@ -420,6 +428,9 @@ func ProcessAzureReposEvent(azureEvent interface{}, diggerConfig *digger_config2
 func ConvertAzureEventToCommands(parseAzureContext Azure, impactedProjects []digger_config2.Project, requestedProject *digger_config2.Project, workflows map[string]digger_config2.Workflow) ([]orchestrator.Job, bool, error) {
 	jobs := make([]orchestrator.Job, 0)
 	//&dependencyGraph, diggerProjectNamespace, parsedAzureContext.BaseUrl, parsedAzureContext.EventType, prNumber,
+
+	log.Println("Azure command detected")
+	log.Println(parseAzureContext.EventType)
 	switch parseAzureContext.EventType {
 	case AzurePrCreated, AzurePrUpdated, AzurePrReopened:
 		for _, project := range impactedProjects {
@@ -515,6 +526,7 @@ func ConvertAzureEventToCommands(parseAzureContext Azure, impactedProjects []dig
 		return jobs, true, nil
 	case AzurePrCommented:
 		diggerCommand := strings.ToLower(parseAzureContext.Event.(AzureCommentEvent).Resource.Comment.Content)
+		log.Println(diggerCommand)
 		coversAllImpactedProjects := true
 		runForProjects := impactedProjects
 
@@ -567,6 +579,8 @@ func ConvertAzureEventToCommands(parseAzureContext Azure, impactedProjects []dig
 				}
 			}
 		}
+
+		log.Println(len(impactedProjects))
 		return jobs, coversAllImpactedProjects, nil
 
 	default:
