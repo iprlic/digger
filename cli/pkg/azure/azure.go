@@ -397,8 +397,12 @@ func ProcessAzureReposEvent(azureEvent interface{}, diggerConfig *digger_config2
 			return nil, nil, 0, fmt.Errorf("could not get changed files: %v", err)
 		}
 
+		fmt.Println("Modified files count", len(changedFiles))
+
 		impactedProjects = diggerConfig.GetModifiedProjects(changedFiles)
 		requestedProject := utils.ParseProjectName(azureEvent.(AzureCommentEvent).Resource.Comment.Content)
+
+		fmt.Println("Impacted projects count", len(impactedProjects))
 
 		if requestedProject == "" {
 			return impactedProjects, nil, prNumber, nil
